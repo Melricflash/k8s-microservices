@@ -1,0 +1,67 @@
+# # Frontend is public facing so we need an ingress?
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: frontend-ingress
+#   namespace: issue-microservices
+#   annotations:
+#     kubernetes.io/ingress-class: "alb"
+#     alb.ingress.kubernetes.io/scheme: "internet-facing"
+#     alb.ingress.kubernetes.io/target-type: "ip"
+#     alb.ingress.kubernetes.io/listen-ports: "[{'HTTPS':443}]"
+#     alb.ingress.kubernetes.io/ssl-redirect: "443"
+#     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:452968854315:certificate/eb8dc186-f1ca-41a8-815d-5e1b4f01cdf1
+#     alb.ingress.kubernetes.io/backend-protocol: "HTTP"
+#     external-dns.alpha.kubernetes.io/hostname: melric-cluster.netbuildertraining.com
+#     external-dns.alpha.kubernetes.io/alias: "true"
+#     external-dns.alpha.kubernetes.io/ttl: "60"
+# spec:
+#   rules:
+#   - host: melric-cluster.netbuildertraining.com
+#     http:
+#       paths:
+#       - path: /
+#         backend:
+#           service:
+#             name: frontend-service
+#             port:
+#               number: 80
+#         pathType: Prefix
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: frontend-service
+#             port:
+#               number: 80
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend-ingress
+  namespace: issue-microservices
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:452968854315:certificate/eb8dc186-f1ca-41a8-815d-5e1b4f01cdf1
+    alb.ingress.kubernetes.io/backend-protocol: "HTTP"
+    external-dns.alpha.kubernetes.io/hostname: melric-cluster.netbuildertraining.com
+    external-dns.alpha.kubernetes.io/alias: "true"
+    external-dns.alpha.kubernetes.io/ttl: "60"
+spec:
+  rules:
+  - host: melric-cluster.netbuildertraining.com
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+        pathType: Prefix

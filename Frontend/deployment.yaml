@@ -1,0 +1,70 @@
+# Deployment file for the frontend app (stateless)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: issue-microservices
+  labels:
+    app: frontend-deployment
+spec: # Desired state of the deployment, pod information
+  replicas: 2 # How many pods we want at all times
+  selector:
+    matchLabels:
+      app: frontend # Manage pods under this label
+  template:
+    metadata:
+      labels:
+        app: frontend # Must match with the one in the selector
+    spec:
+      serviceAccountName: frontend-service-account # Need to use the role made in terraform, service account as a middleman
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: frontend-deployment
+              topologyKey: "kubernetes.io/hostname" # ???
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "kubernetes.io/hostname" # ???
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: frontend-deployment
+      containers: # Defines the actual application container(s) that will be running inside the pod
+      - name: frontend-deployment
+        image: public.ecr.aws/e3m0x0s5/issuefrontend:frontend # This should have a main tag to identify, fix the tag in workflows?
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        resources:
+          requests: # Min resources
+            cpu: "100m" # 0.1 CPU Core
+            memory: "128Mi"
+          limits: # Max resources
+            cpu: "250m" # 0.25 CPU Core
+            memory: "256Mi"
+        env:
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: frontend-deployment-config
+              key: AWS_REGION
+        - name: p1Queue_URL # Note that the queue urls will be different when deployed in work aws account
+          valueFrom:
+            secretKeyRef:
+              name: frontend-deployment-secrets
+              key: P1_QUEUE_URL
+        - name: p2Queue_URL
+          valueFrom:
+            secretKeyRef:
+              name: frontend-deployment-secrets
+              key: P2_QUEUE_URL
+        - name: p3Queue_URL
+          valueFrom:
+            secretKeyRef:
+              name: frontend-deployment-secrets
+              key: P3_QUEUE_URL
+
+
