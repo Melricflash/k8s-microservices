@@ -1,0 +1,68 @@
+# Deployment file for p3Service
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p3-deployment
+  namespace: issue-microservices
+  labels:
+    app: p3-deployment
+spec:
+  replicas: 1 # Just 1 replica for now
+  selector:
+    matchLabels:
+      app: p3App
+  template:
+    metadata:
+      labels:
+        app: p3App
+    spec:
+      serviceAccount: ses-backend-service-account
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: p3-deployment
+              topologyKey: "kubernetes.io/hostname"
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "kubernetes.io/hostname"
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: p3-deployment
+      containers:
+      - name: p3-deployment
+        image: public.ecr.aws/e3m0x0s5/p3queue:p3Service
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000 # Does this matter?
+        resources:
+          requests: # Min Resources
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+        env: # Inject environment variables here
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: p3-deployment-config
+              key: AWS_REGION
+        - name: p3Queue_URL
+          valueFrom:
+            secretKeyRef:
+              name: p3-deployment-secrets
+              key: P3_QUEUE_URL
+        - name: SES_SOURCE
+          valueFrom:
+            secretKeyRef:
+              name: p3-deployment-secrets
+              key: SES_SOURCE
+        - name: SES_TARGET
+          valueFrom:
+            secretKeyRef:
+              name: p3-deployment-secrets
+              key: SES_TARGET

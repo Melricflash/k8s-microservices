@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p2-deployment
+  namespace: issue-microservices
+  labels:
+    app: p2-deployment
+spec:
+  replicas: 1 # Just 1 replica for now
+  selector:
+    matchLabels:
+      app: p2App
+  template:
+    metadata:
+      labels:
+        app: p2App
+    spec:
+      serviceAccount: backend-service-account # Share the SQS Role
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: p2-deployment
+              topologyKey: "kubernetes.io/hostname"
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "kubernetes.io/hostname"
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: p2-deployment
+      containers:
+      - name: p2-deployment
+        image: public.ecr.aws/e3m0x0s5/p2queue:p2Service
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000 # Does this matter?
+        resources:
+          requests: # Min Resources
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+        env: # Inject environment variables here
+        - name: AWS_DEFAULT_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: p2-deployment-config
+              key: AWS_REGION
+        - name: p2Queue_URL
+          valueFrom:
+            secretKeyRef:
+              name: p2-deployment-secrets
+              key: P2_QUEUE_URL
+        - name: JIRA_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: p2-deployment-secrets
+              key: JIRA_API_KEY
+        - name: JIRA_URL
+          valueFrom:
+            secretKeyRef:
+              name: p2-deployment-secrets
+              key: JIRA_URL
+        - name: JIRA_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: p2-deployment-secrets
+              key: JIRA_EMAIL
+        - name: JIRA_PROJECT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: p2-deployment-secrets
+              key: JIRA_PROJECT_KEY
